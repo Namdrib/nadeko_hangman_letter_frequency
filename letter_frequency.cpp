@@ -22,12 +22,13 @@ void usage(char *programName)
 	     << "\tc\t\tTake into account letter casing (default: ignore casing)\n"
 	     << "\tf filename\tRead input from `filename`. (default: read from stdin)\n"
 		 << "\th\t\tShow this help message and exit program\n"
-         << "\tp\t\tTake into account punctuation (default: only process alphanumerics)\n";
+         << "\tp\t\tTake into account punctuation (default: only process alphanumerics)\n"
+         << "\tw\t\tWhether to output the list of words in the given list (default: no output)\n";
 }
 
 
 void parseArgs(int argc, char* argv[], bool &considerCase, 
-               string &filename, bool &considerPunctuation, bool &performSort)
+               string &filename, bool &considerPunctuation, bool &performSort, bool &outputWords)
 {
 	int c = 0;
 	while ((c = getopt(argc, argv, "cf:hps")) != -1)
@@ -59,6 +60,13 @@ void parseArgs(int argc, char* argv[], bool &considerCase,
 			case 's':
 			{
 				performSort = true;
+				break;
+			}
+			
+			// Whether to output the list of words
+			case 'w':
+			{
+				outputWords = true;
 				break;
 			}
 			
@@ -125,16 +133,20 @@ int main(int argc, char* argv[])
 {
 	bool considerCase = false;
 	bool considerPunctuation = false;
+	bool outputWords = false;
 	bool performSort = false;
 	string filename = ""; // blank means take from stdin
 	
-	parseArgs(argc, argv, considerCase, filename, considerPunctuation, performSort);
+	parseArgs(argc, argv, considerCase, filename, considerPunctuation, performSort, outputWords);
 	
 	// Read words into a vector of strings.
 	// If filename is blank, then read from stdin
 	vector<string> words = readFileIntoVector(filename);
 	
-	cerr << "Words: " << words << endl;
+	if (outputWords)
+	{
+		cout << "Words: " << words << endl;
+	}
 	
 	// Build the letter frequency
 	map<char, unsigned long long> letterFrequency;
