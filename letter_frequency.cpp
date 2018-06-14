@@ -15,58 +15,76 @@ using namespace std;
 // Counts the frequency of letters in some text file or stdin if not supplied
 
 // Show usage
-void usage(char *programName)
+void usage(char *program_name)
 {
-	cerr << "Usage: " << programName << " [options]\n"
+	cerr << "Usage: " << program_name << " [options]\n"
 	     << "\nOptions:\n"
-	     << "\tc\t\tTake into account letter casing (default: ignore casing)\n"
-	     << "\tf filename\tRead input from `filename`. (default: read from stdin)\n"
-		 << "\th\t\tShow this help message and exit program\n"
-         << "\tp\t\tTake into account punctuation (default: only process alphanumerics)\n"
-         << "\tw\t\tWhether to output the list of words in the given list (default: no output)\n";
+	     << "  -c\t\tTake into account letter casing (default: ignore casing)\n"
+	     << "  -f filename\tRead input from `filename`. (default: read from stdin)\n"
+		 << "  -h\t\tShow this help message and exit program\n"
+         << "  -p\t\tTake into account punctuation (default: only alphanumerics)\n"
+	     << "  -s\t\tSort the output by frequency (default: no sorting)\n"
+         << "  -w\t\tOutput the words (default: no output)\n";
 }
 
-
-void parseArgs(int argc, char* argv[], bool &considerCase, 
-               string &filename, bool &considerPunctuation, bool &performSort, bool &outputWords)
+class config
 {
-	int c = 0;
-	while ((c = getopt(argc, argv, "cf:hps")) != -1)
+public:
+	bool consider_case;
+	bool consider_punctuation;
+	bool perform_sort;
+	bool output_words;
+	string filename;
+
+	config()
 	{
-		switch (c)
+		consider_case = false;
+		consider_punctuation = false;
+		output_words = false;
+		perform_sort = false;
+		filename = ""; // blank means take from stdin
+	}
+};
+
+bool parse_args(int argc, char* argv[], config &c)
+{
+	int ch = 0;
+	while ((ch = getopt(argc, argv, "cf:hps")) != -1)
+	{
+		switch (ch)
 		{
 			// Take into account case
 			case 'c':
 			{
-				considerCase = true;
+				c.consider_case = true;
 				break;
 			}
 			
 			// Store provided filename
 			case 'f':
 			{
-				filename = optarg;
+				c.filename = optarg;
 				break;
 			}
 			
 			// Take into account punctuation
 			case 'p':
 			{
-				considerPunctuation = true;
+				c.consider_punctuation = true;
 				break;
 			}
 			
 			// Sort the output at the end
 			case 's':
 			{
-				performSort = true;
+				c.perform_sort = true;
 				break;
 			}
 			
 			// Whether to output the list of words
 			case 'w':
 			{
-				outputWords = true;
+				c.output_words = true;
 				break;
 			}
 			
@@ -74,18 +92,19 @@ void parseArgs(int argc, char* argv[], bool &considerCase,
 			default:
 			{
 				usage(argv[0]);
-				exit(EXIT_SUCCESS);
+				return false;
 			}
 		}
 	}
+	return true;
 }
 
 // Reads strings from a filestream (per line)
-vector<string> readFileIntoVector(const string &filename)
+vector<string> read_file_into_string_vector(const string &filename)
 {
 	vector<string> out;
 	
-	istream *isPtr = nullptr; // Read from this
+	istream *is_ptr = nullptr; // Read from this
 	ifstream f;
 	
 	// Open a file if necessary
@@ -97,15 +116,15 @@ vector<string> readFileIntoVector(const string &filename)
 			cerr << "Error, could not open " << filename << endl;
 			exit(EXIT_FAILURE);
 		}
-		isPtr = &f;
+		is_ptr = &f;
 	}
 	else
 	{
-		isPtr = &cin;
+		is_ptr = &cin;
 	}
 	
 	// Do the reading
-	for (string temp; getline(*isPtr, temp); )
+	for (string temp; getline(*is_ptr, temp); )
 	{
 		out.push_back(temp);
 	}
@@ -131,53 +150,52 @@ ostream& operator << (ostream &os, vector<T> &v)
 
 int main(int argc, char* argv[])
 {
-	bool considerCase = false;
-	bool considerPunctuation = false;
-	bool outputWords = false;
-	bool performSort = false;
-	string filename = ""; // blank means take from stdin
+	config c;
 	
-	parseArgs(argc, argv, considerCase, filename, considerPunctuation, performSort, outputWords);
+	if (!parse_args(argc, argv, c))
+	{
+		return 0;
+	}
 	
 	// Read words into a vector of strings.
 	// If filename is blank, then read from stdin
-	vector<string> words = readFileIntoVector(filename);
+	vector<string> words = read_file_into_string_vector(c.filename);
 	
-	if (outputWords)
+	if (c.output_words)
 	{
 		cout << "Words: " << words << endl;
 	}
 	
 	// Build the letter frequency
-	map<char, unsigned long long> letterFrequency;
+	map<char, unsigned long long> letter_freq;
 	for (string s : words)
 	{
-		for (char c : s)
+		for (char ch : s)
 		{
-			if (!considerPunctuation)
+			if (!c.consider_punctuation)
 			{
-				if (!isalnum(c)) continue;
+				if (!isalnum(ch)) continue;
 			}
-			if (!considerCase)
+			if (!c.consider_case)
 			{
-				if (isalpha(c)) c = tolower(c);
+				if (isalpha(ch)) ch = tolower(ch);
 			}
 			
 			// Add it to the map
-			if (letterFrequency.count(c) == 0)
+			if (letter_freq.count(ch) == 0)
 			{
-				letterFrequency[c] = 1;
+				letter_freq[ch] = 1;
 			}
 			else
 			{
-				letterFrequency[c]++;
+				letter_freq[ch]++;
 			}
 		}
 	}
 	
 	// Final output
-	vector<pair<char, unsigned long long>> vp(all(letterFrequency));
-	if (performSort)
+	vector<pair<char, unsigned long long>> vp(all(letter_freq));
+	if (c.perform_sort)
 	{
 		sort(all(vp), 
 			[](const pair<char, unsigned long long> &a, const pair<char, unsigned long long> &b)

@@ -1,6 +1,6 @@
 # Makefile for Nadeko Hangman Hax0rs
 
-CFLAGS = -std=gnu++11 -Wall -O2
+CFLAGS = -std=c++11 -Wall -O2
 
 default: the_cpp
 
@@ -18,7 +18,7 @@ the_ruby:
 	ruby ruby_extract_things.rb
 	
 clean:
-	rm -f *.exe* *.txt
+	rm -f *.exe* a
 	
 spotless: clean
-	rm -f *.txt *.json 
+	rm -f *.txt *.json
